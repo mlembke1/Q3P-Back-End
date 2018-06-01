@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="icon" type="image/png" href="../../static/images/favicon.ico">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/css/materialize.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:100" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:500" rel="stylesheet">
+    <link rel="stylesheet" href="../../static/css/main.css">
+    <script
+      src="https://code.jquery.com/jquery-3.3.1.js"
+      integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60="
+      crossorigin="anonymous">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/js/materialize.min.js"></script>
+    <script type="text/javascript" src="../../static/js/delete.js"></script>
+    <script type="text/javascript" src="../../static/js/update.js"></script>
+    <script type="text/javascript" src="../../static/js/create.js"></script>
+    {% if start %}
+      <script type="text/javascript" src="../../static/js/login.js"></script>
+      <script type="text/javascript" src="../../static/js/signup.js"></script>
+    {% elif delete or home or update %}
+      <script type="text/javascript" src="../../static/js/{{whichPage}}.js"></script>
+    {% endif %}
+
+    {% if home %}
+        <link rel="stylesheet" href="../../static/css/homepage.css">
+    {% endif %}
+
+    {% if start %}
+        <link rel="stylesheet" href="../../static/css/start.css">
+    {% endif %}
+    <title>Write</title>
+  </head>
+  <body>
+    <main>
+      {% if isLoggedIn %}
+        {% include 'includes/_user-navbar.html' %}
+      {% else %}
+        {% include 'includes/_landingpage-navbar.html' %}
+      {% endif %}
+
+      <div class="container">
+        {% block body %} {% endblock %}
+      </div>
+      <div class="center-align">
+        {% include 'includes/_flashMessages.html' %}
+      </div>
+    </main>
+    <footer class="page-footer">
+        <div class="container">
+          <div class="row">
+            <div class="col l5 m5 s6"></div>
+            <div class="col l2 hide-on-small-and-down"></div>
+            <div class="col l5 m5 s6 right-align">
+                <a href="https://www.linkedin.com/in/mitchell-lembke/" target="_blank" class="clickables">
+                  <p class="social-links clickables pad">Developed by <br>Mitch Lembke</p>
+                </a>
+            </div>
+          </div>
+        </div>
+      </footer>
+  </body>
+</html>

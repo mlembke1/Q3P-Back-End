@@ -1,0 +1,70 @@
+/***************SIGNUP / LOGIN **************/
+
+
+#login-submit-button, #signup-submit-button {
+  transition: .3s;
+}
+
+#login-submit-button:hover, #signup-submit-button:hover {
+  color: black !important;
+  background-color: white;
+  border: 1px solid black;
+  transform: scale(1.1);
+}
+
+.collapsible input,
+.collapsible label {
+  font-size: 1.1em;
+  cursor:pointer;
+}
+
+.collapsible-header {
+  font-size: 1.5em;
+  letter-spacing: 5px;
+  justify-content: center;
+}
+
+.collapsible-header:focus {
+  outline:none;
+}
+
+.btn {
+  color: white !important;
+  background-color: #00aff0;
+}
+
+.btn:focus {
+  color: white !important;
+  background-color: #00aff0;
+}
+
+.signup-error {
+  color: tomato;
+  margin-left: 1em;
+}
+
+
+.popout input:focus {
+  border-bottom: 1px solid black !important;
+}
+
+input[type=email]:not(.browser-default):focus:not([readonly]) + label {
+  color:white;
+}
+
+input[type=password]:not(.browser-default):focus:not([readonly]) + label {
+  color:white;
+}
+
+input[type=text]:not(.browser-default):focus:not([readonly]) + label {
+  color:white;
+}
+
+.signup-login-wrapper {
+  margin-top: 15%;
+}
+
+
+input, label {
+  display: block;
+}
