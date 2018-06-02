@@ -118,13 +118,13 @@ def createNewDeck():
         if request.method == 'POST' and form.validate():
             title = form.title.data
             subject = form.subject.data
-            username = session['username']
+            author = session['username']
 
             #  CREATE CURSOR
             cur = mysql.connection.cursor()
 
             # EXECUTE QUERY
-            cur.execute('''INSERT INTO decks(title, subject, username) VALUES(%s, %s, %s, %s)''', (title, subject, username))
+            cur.execute('''INSERT INTO decks(title, subject, author) VALUES(%s, %s, %s, %s)''', (title, subject, author))
 
             #  COMMIT TO DATABASE
             mysql.connection.commit()
@@ -214,36 +214,36 @@ def read():
 
 #  GET SPECIFIC DECK BY ITS ID
 @app.route('/deck/<string:id>/')
-def journal_entry(id):
+def deck_by_id(id):
     #  CREATE CURSOR
     cur = mysql.connection.cursor()
 
     # EXECUTE QUERY
-    cur.execute('''SELECT * FROM entries WHERE id = %s''', [id])
+    cur.execute('''SELECT * FROM decks WHERE id = %s''', [id])
 
     #  COMMIT TO DATABASE
     mysql.connection.commit()
 
-    entry = cur.fetchall()
+    deck = cur.fetchall()
 
     # CLOSE THE CONNECTION
     cur.close()
-    return render_template('journal_entry.html', entry = entry[0])
+    return json_response(deck=deck)
+
 
 # ######################## UPDATE ###########################################
  # UPDATE A JOURNAL ENTRY
-@app.route('/update/<string:id>', methods=['PUT', 'GET'])
+@app.route('/update/<string:id>', methods=['PUT'])
 def update(id):
-    form = updateEntryForm(request.form)
-    if request.method == 'PUT':
+    form = updateDeckForm(request.form)
         title = form.title.data
-        author = form.author.data
-        journal_entry = form.journal_entry.data
+        subject = form.subject.data
+
         # CREATE CURSOR
         cur = mysql.connection.cursor()
 
         # EXECUTE QUERIES
-        cur.execute ('''UPDATE entries SET title = %s, author = %s, journal_entry = %s WHERE id=%s''', (title, author, journal_entry, id))
+        cur.execute ('''UPDATE decks SET title = %s, subject = %s WHERE id=%s''', (title, subject, id))
 
         #  COMMIT TO DATABASE
         mysql.connection.commit()
@@ -251,34 +251,17 @@ def update(id):
         # CLOSE THE CONNECTION
         cur.close()
 
-        return json_response(message='success')
-
-    # CREATE CURSOR
-    cur = mysql.connection.cursor()
-
-    # EXECUTE QUERIES
-    cur.execute('''SELECT * FROM entries WHERE id=%s''', [id])
-
-    #  COMMIT TO DATABASE
-    mysql.connection.commit()
-
-    Entry = cur.fetchall()
-
-    # CLOSE THE CONNECTION
-    cur.close()
-
-    return render_template('update.html', entry = Entry[0], whichPage='update', isLoggedIn=True)
+        return json_response(updateStatus='success')
 
 # ######################## DELETE ###########################################
  # DELETE A JOURNAL ENTRY
-@app.route('/delete/<string:id>', methods=['GET', 'DELETE'])
+@app.route('/delete/<string:id>', methods=['DELETE'])
 def delete(id):
-    if request.method == 'DELETE':
         # CREATE CURSOR
         cur = mysql.connection.cursor()
 
         # EXECUTE QUERIES
-        cur.execute ('''DELETE FROM entries WHERE id=%s''', [id])
+        cur.execute ('''DELETE FROM decks WHERE id=%s''', [id])
 
         #  COMMIT TO DATABASE
         mysql.connection.commit()
@@ -286,24 +269,8 @@ def delete(id):
         # CLOSE THE CONNECTION
         cur.close()
 
-        return json_response(message='success')
-
-    # CREATE CURSOR
-    cur = mysql.connection.cursor()
-
-    # EXECUTE QUERIES
-    cur.execute('''SELECT * FROM entries WHERE id=%s''', [id])
-
-    #  COMMIT TO DATABASE
-    mysql.connection.commit()
-
-    Entry = cur.fetchall()
-
-    # CLOSE THE CONNECTION
-    cur.close()
-
-    return render_template('delete.html', entry = Entry[0], whichPage='delete', isLoggedIn=True)
-
+        return json_response(deleteStatus='success')
+    
 ############## RUN THE APP ###############
 if __name__ == '__main__':
     app.secret_key=os.environ.get('SECRET_KEY')
