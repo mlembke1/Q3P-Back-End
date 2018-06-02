@@ -20,11 +20,11 @@ Session(app)
 
 
 # MYSQL CONFIGURATION WHEN DEPLOYED
-app.config['MYSQL_HOST'] = 'us-cdbr-iron-east-04.cleardb.net'
-app.config['MYSQL_USER'] = 'bd4527260a9719'
-app.config['MYSQL_PASSWORD'] = '2b516563'
-app.config['MYSQL_DB'] = 'heroku_aa291c01967962f'
-app.config['MYSQL_PORT'] = 3306
+app.config['MYSQL_HOST'] = process.env.MYSQL_HOST
+app.config['MYSQL_USER'] = process.env.MYSQL_USER
+app.config['MYSQL_PASSWORD'] = process.env.MYSQL_PASSWORD
+app.config['MYSQL_DB'] = process.env.MYSQL_DB
+app.config['MYSQL_PORT'] = process.env.MYSQL_PORT
 app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 
 # INITIATES MYSQL
@@ -34,12 +34,10 @@ mysql = MySQL(app)
 class newDeckForm(Form):
     subject = StringField('Author', [validators.Length(min=1, max=50)])
     title  = StringField('Title', [validators.Length(min=4, max=50)])
-    journal_entry  = StringField('Journal Entry', [validators.Length(min=4, max=500)])
 
 class updateDeckForm(Form):
     subject = StringField('Author', [validators.Length(min=1, max=50)])
     title  = StringField('Title', [validators.Length(min=4, max=50)])
-    journal_entry  = StringField('Journal Entry', [validators.Length(min=4, max=500)])
 
 class signupForm(Form):
     username = StringField('Username', [validators.Length(min=1, max=50)])
@@ -81,7 +79,7 @@ def about():
 @app.route('/logout')
 def logout():
     session.clear()
-    return redirect(url_for('getHome'))
+    return json_response(logoutStatus='success')
 
 ######################### CREATE #######################################
 # CREATE A NEW USER
@@ -109,25 +107,24 @@ def signup():
         session['logged_in'] = True
         session['username'] = username
 
-        return redirect(url_for('read'))
+        return json_response(signupStatus='success')
 
 
-#  CREATE A NEW JOURNAL ENTRY
-@app.route('/create', methods=['GET', 'POST'])
-def createNewEntry():
+#  CREATE A NEW DECK
+@app.route('/createDeck', methods=['POST'])
+def createNewDeck():
     # if session.username:
-        form = newEntryForm(request.form)
+        form = newDeckForm(request.form)
         if request.method == 'POST' and form.validate():
             title = form.title.data
-            author = form.author.data
-            journal_entry = form.journal_entry.data
+            subject = form.subject.data
             username = session['username']
 
             #  CREATE CURSOR
             cur = mysql.connection.cursor()
 
             # EXECUTE QUERY
-            cur.execute('''INSERT INTO entries(title, author, journal_entry, username) VALUES(%s, %s, %s, %s)''', (title, author, journal_entry, username))
+            cur.execute('''INSERT INTO decks(title, subject, username) VALUES(%s, %s, %s, %s)''', (title, subject, username))
 
             #  COMMIT TO DATABASE
             mysql.connection.commit()
@@ -135,9 +132,7 @@ def createNewEntry():
             # CLOSE THE CONNECTION
             cur.close()
 
-            return redirect(url_for('read'))
-
-        return render_template('create.html', form=form, isLoggedIn=True)
+            return json_response(newDeckStatus='success')
 
 
 # ######################## READ ###########################################
@@ -170,9 +165,9 @@ def login():
             session['username'] = username
             return redirect(url_for('read'))
 
-        return redirect('/start#login-collapsible')
+        return json_response(loginStatus='success')
 
-    return redirect('/start#login-collapsible')
+    return json_response(loginStatus='fail')
 
 
 # GET ALL USERS
@@ -195,8 +190,8 @@ def getAllUsers():
     return json_response(allUsers=allUsers)
 
 
-# VIEW ALL JOURNAL ENTRIES
-@app.route('/read')
+# VIEW ALL DECKS
+@app.route('/getAllDecks')
 def read():
     # if session.username:
         username = session['username']
@@ -204,21 +199,21 @@ def read():
         cur = mysql.connection.cursor()
 
         # EXECUTE QUERY
-        cur.execute('''SELECT * FROM entries WHERE username = %s''', [username])
+        cur.execute('''SELECT * FROM decks WHERE username = %s''', [username])
 
         #  COMMIT TO DATABASE
         mysql.connection.commit()
 
-        Entries = cur.fetchall()
+        decks = cur.fetchall()
 
         # CLOSE THE CONNECTION
         cur.close()
 
-        return render_template('journal_entries.html', entries = Entries, isLoggedIn = True)
-    # return redirect(url_for('signup'))
+        return json_response(allDecks=decks)
 
-#  GET SPECIFIC JOURNAL ENTRY BY ITS ID
-@app.route('/journal_entry/<string:id>/')
+
+#  GET SPECIFIC DECK BY ITS ID
+@app.route('/deck/<string:id>/')
 def journal_entry(id):
     #  CREATE CURSOR
     cur = mysql.connection.cursor()
