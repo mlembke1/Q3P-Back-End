@@ -19,7 +19,6 @@ json = FlaskJSON(app)
 Session(app)
 
 
-
 # MYSQL CONFIGURATION WHEN DEPLOYED
 app.config['MYSQL_HOST'] = 'us-cdbr-iron-east-04.cleardb.net'
 app.config['MYSQL_USER'] = 'bd4527260a9719'
@@ -31,14 +30,14 @@ app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 # INITIATES MYSQL
 mysql = MySQL(app)
 
-######## SERVER SIDE VALIDATION FOR FORM ######
-class newEntryForm(Form):
-    author = StringField('Author', [validators.Length(min=1, max=50)])
+######## SERVER SIDE VALIDATION FOR FORMS ######
+class newDeckForm(Form):
+    subject = StringField('Author', [validators.Length(min=1, max=50)])
     title  = StringField('Title', [validators.Length(min=4, max=50)])
     journal_entry  = StringField('Journal Entry', [validators.Length(min=4, max=500)])
 
-class updateEntryForm(Form):
-    author = StringField('Author', [validators.Length(min=1, max=50)])
+class updateDeckForm(Form):
+    subject = StringField('Author', [validators.Length(min=1, max=50)])
     title  = StringField('Title', [validators.Length(min=4, max=50)])
     journal_entry  = StringField('Journal Entry', [validators.Length(min=4, max=500)])
 
