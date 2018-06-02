@@ -20,13 +20,12 @@ Session(app)
 
 
 
-
 # MYSQL CONFIGURATION WHEN DEPLOYED
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'mitch'
-app.config['MYSQL_PASSWORD'] = 'mlembke1'
-app.config['MYSQL_DB'] = 'study'
-# app.config['MYSQL_PORT'] = 
+app.config['MYSQL_HOST'] = 'us-cdbr-iron-east-04.cleardb.net'
+app.config['MYSQL_USER'] = 'bd4527260a9719'
+app.config['MYSQL_PASSWORD'] = '2b516563'
+app.config['MYSQL_DB'] = 'heroku_aa291c01967962f'
+app.config['MYSQL_PORT'] = 3306
 app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 
 # INITIATES MYSQL
