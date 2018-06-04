@@ -305,7 +305,6 @@ def readAllDecksForUser():
         username = session['username']
         cur = mysql.connection.cursor()
 
-
         cur.execute('''SELECT * FROM decks WHERE username = %s''', [username])
 
         #  COMMIT TO DATABASE
@@ -316,7 +315,7 @@ def readAllDecksForUser():
         # CLOSE THE CONNECTION
         cur.close()
 
-        return json_response(allDecks=decks[0])
+        return json_response(userDecks=userDecks)
 
 
 # VIEW ALL DECKS
@@ -324,9 +323,9 @@ def readAllDecksForUser():
 def readAllPublicDecks():
     # if session.username:
         cur = mysql.connection.cursor()
+        public = 'T'
 
-
-        cur.execute('''SELECT * FROM decks WHERE public = true''')
+        cur.execute('''SELECT * FROM decks WHERE public = %s''', [public])
 
         #  COMMIT TO DATABASE
         mysql.connection.commit()
@@ -336,11 +335,11 @@ def readAllPublicDecks():
         # CLOSE THE CONNECTION
         cur.close()
 
-        return json_response(allDecks=decks[0])
+        return json_response(publicDecks=decks)
 
 
 #  GET SPECIFIC DECK BY ITS ID
-@app.route('/deck/<string:id>/')
+@app.route('/deck/<string:id>')
 def deck_by_id(id):
     cur = mysql.connection.cursor()
 
@@ -350,20 +349,24 @@ def deck_by_id(id):
     #  COMMIT TO DATABASE
     mysql.connection.commit()
 
-    deck = cur.fetchall()
+    deck = cur.fetchone()
 
     # CLOSE THE CONNECTION
     cur.close()
-    return json_response(deck=deck[0])
+    return json_response(deck=deck)
 
 
 # ######################## UPDATE ###########################################
  # UPDATE A JOURNAL ENTRY
 @app.route('/update/<string:id>', methods=['PUT'])
 def update(id):
-    form = updateDeckForm(request.form)
-    title = form.title.data
-    subject = form.subject.data
+    # form = updateDeckForm(request.form)
+    # title = form.title.data
+    # subject = form.subject.data
+
+    json = request.get_json()
+    title = json['title']
+    subject = json['subject']        
 
     # CREATE CURSOR
     cur = mysql.connection.cursor()
