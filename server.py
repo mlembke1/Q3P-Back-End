@@ -14,12 +14,12 @@ import os
 import json
 
 app = Flask(__name__)
+
 # SET SECRET KEY
 app.secret_key = os.environ.get('SECRET_KEY')
 app.config['SESSION_TYPE'] = 'filesystem'
 json = FlaskJSON(app)
 Session(app)
-
 
 MYSQL_HOST = os.environ.get('MYSQL_HOST')
 MYSQL_USER = os.environ.get('MYSQL_USER')
@@ -29,11 +29,11 @@ MYSQL_PORT = os.environ.get('MYSQL_PORT')
 
 
 # MYSQL CONFIGURATION WHEN DEPLOYED
-app.config['MYSQL_HOST'] = MYSQL_HOST
-app.config['MYSQL_USER'] = MYSQL_USER
-app.config['MYSQL_PASSWORD'] = MYSQL_PASSWORD
-app.config['MYSQL_DB'] = MYSQL_DB
-app.config['MYSQL_PORT'] = MYSQL_PORT
+app.config['MYSQL_HOST'] = 'us-cdbr-iron-east-04.cleardb.net'
+app.config['MYSQL_USER'] = 'bd4527260a9719'
+app.config['MYSQL_PASSWORD'] = '2b516563'
+app.config['MYSQL_DB'] = 'heroku_aa291c01967962f'
+app.config['MYSQL_PORT'] = 3306
 app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 
 # INITIATES MYSQL
@@ -86,16 +86,29 @@ def logout():
 @app.route('/signup', methods=['POST'])
 def signup():
     # if not session.username:
-        form = signupForm(request.form)
+        # form = signupForm(request.form)
         # if form.validate():
-        username = form.username.data
-        email = form.email.data
-        password = sha256_crypt.hash(form.password.data)
+        # username = form.username.data
+        # email = form.email.data
+        # password = sha256_crypt.hash(form.password.data)
 
-        #  CREATE CURSOR
+
+        # GET THE USER_ID TO PUT IT INTO THE SESSION
+        cur = mysql.connection.cursor()
+        cur.execute('''SELECT id FROM users WHERE username = %s''', [username])
+        mysql.connection.commit()
+        id = cur.fetchone()[0]
+        cur.close()
+
+        # FROM THE COMMAND LINE USE THIS TO CREATE A USER
+        json = request.get_json()
+        username = json['username']
+        email = json['email']
+        password = sha256_crypt.hash(json['password'])
+
         cur = mysql.connection.cursor()
 
-        # EXECUTE QUERY
+
         cur.execute('''INSERT INTO users(username, email, password) VALUES(%s, %s, %s)''', (username, email, password))
 
         #  COMMIT TO DATABASE
@@ -106,6 +119,7 @@ def signup():
 
         session['logged_in'] = True
         session['username'] = username
+        session['id'] = id
 
         return json_response(signupStatus='success')
 
@@ -115,43 +129,62 @@ def signup():
 def createNewDeck():
     # if session.username:
         form = newDeckForm(request.form)
-        if request.method == 'POST' and form.validate():
-            title = form.title.data
-            subject = form.subject.data
-            author = session['username']
+        # if request.method == 'POST' and form.validate():
+            # title = form.title.data
+            # subject = form.subject.data
+            # author = session['username']
+            # user_id = session['id']
 
-            user_id = session['id']
-            deck_id = form.deck_id.data
+        # FROM THE COMMAND LINE USE THIS TO CREATE A DECK
+        json = request.get_json()
+        title = json['title']
+        subject = json['subject']
+        author = json['author']
+        public = json['public']
+        user_id = 1
 
-            #  CREATE CURSOR
-            cur = mysql.connection.cursor()
+        app.logger.info(public)
 
-            # EXECUTE QUERY
-            cur.execute('''INSERT INTO decks(title, subject, author) VALUES(%s, %s, %s)''', (title, subject, author))
-            cur.execute('''INSERT INTO users_decks(user_id, deck_id) VALUES(%s, %s)''', (user_id, deck_id))
+        cur = mysql.connection.cursor()
 
-            #  COMMIT TO DATABASE
-            mysql.connection.commit()
+        cur.execute('''INSERT INTO decks(title, subject, author, public) VALUES(%s, %s, %s, %s)''', (title, subject, author, public))
+        #  COMMIT TO DATABASE
+        mysql.connection.commit()
+        # CLOSE THE CONNECTION
+        cur.close()
 
-            # CLOSE THE CONNECTION
-            cur.close()
+        cur = mysql.connection.cursor()
+        cur.execute('''SELECT LAST_INSERT_ID()''')
+        mysql.connection.commit()
+        deck_id = cur.fetchone()['LAST_INSERT_ID()']
+        cur.close()
 
-            return json_response(newDeckStatus='success')
+        cur = mysql.connection.cursor()
+        cur.execute('''INSERT INTO users_decks(user_id, deck_id) VALUES(%s, %s)''', (user_id, deck_id))
+        mysql.connection.commit()
+        cur.close()
+
+        return json_response(newDeckStatus='success')
 
 #  CREATE A NEW CARD
 @app.route('/createCard', methods=['POST'])
 def createNewCard():
     # if session.username:
-        form = newCardForm(request.form)
-        if request.method == 'POST' and form.validate():
-            front = form.front.data
-            back = form.back.data
-            deck_id = form.deck_id.data
+        # form = newCardForm(request.form)
+        # if request.method == 'POST' and form.validate():
+        #     front = form.front.data
+        #     back = form.back.data
+        #     deck_id = form.deck_id.data
 
-            #  CREATE CURSOR
+            # FROM THE COMMAND LINE USE THIS TO CREATE A CARD
+            json = request.get_json()
+            front = json['front']
+            back = json['back']
+            deck_id = json['deck_id']
+
             cur = mysql.connection.cursor()
 
-            # EXECUTE QUERY
+
             cur.execute('''INSERT INTO cards(front, back, deck_id) VALUES(%s, %s, %s)''', (front, back, deck_id))
 
             #  COMMIT TO DATABASE
@@ -166,34 +199,41 @@ def createNewCard():
 @app.route('/createTag', methods=['POST'])
 def createNewTag():
     # if session.username:
-        form = newTagForm(request.form)
-        if request.method == 'POST' and form.validate():
+        # form = newTagForm(request.form)
+        # if request.method == 'POST' and form.validate():
+        #
+        #     name = form.name.data
+        #     card_id = form.card_id.data
 
-            name = form.name.data
-            card_id = form.card_id.data
-            #  CREATE CURSOR
-            cur = mysql.connection.cursor()
-
-            # EXECUTE QUERY FOR THE NEW TAG
-            cur.execute('''INSERT INTO tags(name) VALUES(%s)''', [name])
-            cur.execute('''SELECT LAST_INSERT_ID()''')
-
-            #  COMMIT TO DATABASE
-            mysql.connection.commit()
-
-            tag_id = cur.fetchall()
-
-            # CLOSE THE CONNECTION
-            cur.close()
+        # FROM THE COMMAND LINE USE THIS TO CREATE A CARD
+        json = request.get_json()
+        name = json['name']
+        card_id = json['card_id']
 
 
-            # EXECUTE QUERY FOR THE NEW CARDS_TAGS ENTRY
-            cur.mysql.connection.cursor()
-            cur.execute('''INSERT INTO cards_tags(card_id, tag_id) VALUES(%s, %s)''', (card_id, tag_id[0]))
-            mysql.connection.commit()
-            cur.close()
+        cur = mysql.connection.cursor()
+        # FOR THE NEW TAG
+        cur.execute('''INSERT INTO tags(name) VALUES(%s)''', [name])
+        #  COMMIT TO DATABASE
+        mysql.connection.commit()
+        # CLOSE THE CONNECTION
+        cur.close()
 
-            return json_response(newTagStatus='success')
+        #  GET TAG_ID
+        cur = mysql.connection.cursor()
+        cur.execute('''SELECT LAST_INSERT_ID()''')
+        mysql.connection.commit()
+        tag_id = cur.fetchone()['LAST_INSERT_ID()']
+        cur.close()
+
+
+        # FOR THE NEW CARDS_TAGS ENTRY
+        cur = mysql.connection.cursor()
+        cur.execute('''INSERT INTO cards_tags(card_id, tag_id) VALUES(%s, %s)''', (card_id, tag_id))
+        mysql.connection.commit()
+        cur.close()
+
+        return json_response(newTagStatus='success')
 
 
 
@@ -215,10 +255,9 @@ def login():
         cur.close()
 
 
-        #  CREATE CURSOR
         cur = mysql.connection.cursor()
 
-        # EXECUTE QUERY
+
         cur.execute('''SELECT password FROM users WHERE username = %s''', [username])
 
         #  COMMIT TO DATABASE
@@ -242,13 +281,11 @@ def login():
 
 
 # GET ALL USERS
-@app.route('/start/users')
+@app.route('/getAllUsers')
 def getAllUsers():
-    #  CREATE CURSOR
     cur = mysql.connection.cursor()
 
-    # EXECUTE QUERY
-    cur.execute('''SELECT * FROM users''')
+    result = cur.execute('''SELECT username FROM users''')
 
     #  COMMIT TO DATABASE
     mysql.connection.commit()
@@ -262,15 +299,34 @@ def getAllUsers():
 
 
 # VIEW ALL DECKS
-@app.route('/getAllDecks')
-def read():
+@app.route('/getAllDecksForUser')
+def readAllDecksForUser():
     # if session.username:
         username = session['username']
-        #  CREATE CURSOR
         cur = mysql.connection.cursor()
 
-        # EXECUTE QUERY
+
         cur.execute('''SELECT * FROM decks WHERE username = %s''', [username])
+
+        #  COMMIT TO DATABASE
+        mysql.connection.commit()
+
+        decks = cur.fetchall()
+
+        # CLOSE THE CONNECTION
+        cur.close()
+
+        return json_response(allDecks=decks[0])
+
+
+# VIEW ALL DECKS
+@app.route('/getAllPublicDecks')
+def readAllPublicDecks():
+    # if session.username:
+        cur = mysql.connection.cursor()
+
+
+        cur.execute('''SELECT * FROM decks WHERE public = true''')
 
         #  COMMIT TO DATABASE
         mysql.connection.commit()
@@ -286,10 +342,9 @@ def read():
 #  GET SPECIFIC DECK BY ITS ID
 @app.route('/deck/<string:id>/')
 def deck_by_id(id):
-    #  CREATE CURSOR
     cur = mysql.connection.cursor()
 
-    # EXECUTE QUERY
+
     cur.execute('''SELECT * FROM decks WHERE id = %s''', [id])
 
     #  COMMIT TO DATABASE
