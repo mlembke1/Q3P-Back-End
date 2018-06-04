@@ -92,7 +92,6 @@ def signup():
         # email = form.email.data
         # password = sha256_crypt.hash(form.password.data)
 
-
         # GET THE USER_ID TO PUT IT INTO THE SESSION
         cur = mysql.connection.cursor()
         cur.execute('''SELECT id FROM users WHERE username = %s''', [username])
@@ -246,6 +245,7 @@ def login():
     password = form.password.data
 
 
+
     if username:
         # GET THE USER_ID TO PUT IT INTO THE SESSION
         cur = mysql.connection.cursor()
@@ -366,7 +366,7 @@ def update(id):
 
     json = request.get_json()
     title = json['title']
-    subject = json['subject']        
+    subject = json['subject']
 
     # CREATE CURSOR
     cur = mysql.connection.cursor()
