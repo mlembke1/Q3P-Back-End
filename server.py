@@ -1,4 +1,5 @@
 ####### IMPORTING DEPENDENCIES #########
+from flask import jsonify, json
 from flask import Flask, render_template, flash, redirect, url_for, session, logging, request
 from flask_session import Session
 from flask_json import FlaskJSON, json_response
@@ -10,6 +11,7 @@ from pathlib import Path
 env_path = Path('.') / '.env'
 load_dotenv(dotenv_path=env_path)
 import os
+import json
 
 app = Flask(__name__)
 # SET SECRET KEY
@@ -39,12 +41,23 @@ mysql = MySQL(app)
 
 ######## SERVER SIDE VALIDATION FOR FORMS ######
 class newDeckForm(Form):
-    subject = StringField('Author', [validators.Length(min=1, max=50)])
+    author = StringField('Author', [validators.Length(min=1, max=50)])
     title  = StringField('Title', [validators.Length(min=4, max=50)])
 
 class updateDeckForm(Form):
     subject = StringField('Author', [validators.Length(min=1, max=50)])
     title  = StringField('Title', [validators.Length(min=4, max=50)])
+
+class newCardForm(Form):
+    front = StringField('Front', [validators.Length(min=1, max=300)])
+    back  = StringField('Back', [validators.Length(min=4, max=300)])
+
+class updateCardForm(Form):
+    front = StringField('Front', [validators.Length(min=1, max=300)])
+    back  = StringField('Back', [validators.Length(min=4, max=300)])
+
+class newTagForm(Form):
+    name = StringField('Name', [validators.Length(min=1, max=25)])
 
 class signupForm(Form):
     username = StringField('Username', [validators.Length(min=1, max=50)])
@@ -62,26 +75,6 @@ class loginForm(Form):
     password = StringField('Password', [validators.Length(min=4, max=50)])
 
 ############# ROUTES #############
-# GET HOME PAGE
-@app.route('/')
-def getHome():
-    if 'logged_in' in session:
-        return redirect(url_for('read'))
-    return render_template('home.html', home='home', whichPage='home')
-    # return  render_template(url_for('read'))
-
-# GET START PAGE --- LOGIN / SIGNUP
-@app.route('/start')
-def getStart():
-    # if not session.username:
-        return render_template('start.html', start='start', whichPage='start')
-    # return  render_template(url_for('read'))
-#  ABOUT ME PAGE
-@app.route('/about')
-def about():
-    # if not session.username:
-        return render_template('about.html', about='about', whichPage='about')
-    # return  render_template(url_for('read'))
 
 @app.route('/logout')
 def logout():
@@ -127,11 +120,15 @@ def createNewDeck():
             subject = form.subject.data
             author = session['username']
 
+            user_id = session['id']
+            deck_id = form.deck_id.data
+
             #  CREATE CURSOR
             cur = mysql.connection.cursor()
 
             # EXECUTE QUERY
-            cur.execute('''INSERT INTO decks(title, subject, author) VALUES(%s, %s, %s, %s)''', (title, subject, author))
+            cur.execute('''INSERT INTO decks(title, subject, author) VALUES(%s, %s, %s)''', (title, subject, author))
+            cur.execute('''INSERT INTO users_decks(user_id, deck_id) VALUES(%s, %s)''', (user_id, deck_id))
 
             #  COMMIT TO DATABASE
             mysql.connection.commit()
@@ -140,6 +137,64 @@ def createNewDeck():
             cur.close()
 
             return json_response(newDeckStatus='success')
+
+#  CREATE A NEW CARD
+@app.route('/createCard', methods=['POST'])
+def createNewCard():
+    # if session.username:
+        form = newCardForm(request.form)
+        if request.method == 'POST' and form.validate():
+            front = form.front.data
+            back = form.back.data
+            deck_id = form.deck_id.data
+
+            #  CREATE CURSOR
+            cur = mysql.connection.cursor()
+
+            # EXECUTE QUERY
+            cur.execute('''INSERT INTO cards(front, back, deck_id) VALUES(%s, %s, %s)''', (front, back, deck_id))
+
+            #  COMMIT TO DATABASE
+            mysql.connection.commit()
+
+            # CLOSE THE CONNECTION
+            cur.close()
+
+            return json_response(newCardStatus='success')
+
+#  CREATE A NEW CARD
+@app.route('/createTag', methods=['POST'])
+def createNewTag():
+    # if session.username:
+        form = newTagForm(request.form)
+        if request.method == 'POST' and form.validate():
+
+            name = form.name.data
+            card_id = form.card_id.data
+            #  CREATE CURSOR
+            cur = mysql.connection.cursor()
+
+            # EXECUTE QUERY FOR THE NEW TAG
+            cur.execute('''INSERT INTO tags(name) VALUES(%s)''', [name])
+            cur.execute('''SELECT LAST_INSERT_ID()''')
+
+            #  COMMIT TO DATABASE
+            mysql.connection.commit()
+
+            tag_id = cur.fetchall()
+
+            # CLOSE THE CONNECTION
+            cur.close()
+
+
+            # EXECUTE QUERY FOR THE NEW CARDS_TAGS ENTRY
+            cur.mysql.connection.cursor()
+            cur.execute('''INSERT INTO cards_tags(card_id, tag_id) VALUES(%s, %s)''', (card_id, tag_id[0]))
+            mysql.connection.commit()
+            cur.close()
+
+            return json_response(newTagStatus='success')
+
 
 
 # ######################## READ ###########################################
@@ -152,6 +207,14 @@ def login():
 
 
     if username:
+        # GET THE USER_ID TO PUT IT INTO THE SESSION
+        cur = mysql.connection.cursor()
+        cur.execute('''SELECT id FROM users WHERE username = %s''', [username])
+        mysql.connection.commit()
+        id = cur.fetchall()
+        cur.close()
+
+
         #  CREATE CURSOR
         cur = mysql.connection.cursor()
 
@@ -162,15 +225,16 @@ def login():
         mysql.connection.commit()
 
         hashed_password = cur.fetchall()
-        app.logger.info(hashed_password)
 
         # CLOSE THE CONNECTION
         cur.close()
 
+
         if sha256_crypt.verify(password, hashed_password[0]['password']):
+            # SET THE SEESION
             session['logged_in'] = True
             session['username'] = username
-            return redirect(url_for('read'))
+            session['id'] = id[0]['id']
 
         return json_response(loginStatus='success')
 
@@ -216,7 +280,7 @@ def read():
         # CLOSE THE CONNECTION
         cur.close()
 
-        return json_response(allDecks=decks)
+        return json_response(allDecks=decks[0])
 
 
 #  GET SPECIFIC DECK BY ITS ID
@@ -235,7 +299,7 @@ def deck_by_id(id):
 
     # CLOSE THE CONNECTION
     cur.close()
-    return json_response(deck=deck)
+    return json_response(deck=deck[0])
 
 
 # ######################## UPDATE ###########################################
@@ -243,22 +307,22 @@ def deck_by_id(id):
 @app.route('/update/<string:id>', methods=['PUT'])
 def update(id):
     form = updateDeckForm(request.form)
-        title = form.title.data
-        subject = form.subject.data
+    title = form.title.data
+    subject = form.subject.data
 
-        # CREATE CURSOR
-        cur = mysql.connection.cursor()
+    # CREATE CURSOR
+    cur = mysql.connection.cursor()
 
-        # EXECUTE QUERIES
-        cur.execute ('''UPDATE decks SET title = %s, subject = %s WHERE id=%s''', (title, subject, id))
+    # EXECUTE QUERIES
+    cur.execute ('''UPDATE decks SET title = %s, subject = %s WHERE id=%s''', (title, subject, id))
 
-        #  COMMIT TO DATABASE
-        mysql.connection.commit()
+    #  COMMIT TO DATABASE
+    mysql.connection.commit()
 
-        # CLOSE THE CONNECTION
-        cur.close()
+    # CLOSE THE CONNECTION
+    cur.close()
 
-        return json_response(updateStatus='success')
+    return json_response(updateStatus='success')
 
 # ######################## DELETE ###########################################
  # DELETE A JOURNAL ENTRY
@@ -274,7 +338,7 @@ def delete(id):
         mysql.connection.commit()
 
         # CLOSE THE CONNECTION
-        cur.close()te
+        cur.close()
 
         return json_response(deleteStatus='success')
 
