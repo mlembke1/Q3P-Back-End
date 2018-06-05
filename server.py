@@ -215,13 +215,12 @@ def createNewTag():
 
 # ######################## READ ###########################################
 # LOGIN ROUTE
-@app.route('/signin', methods=['POST'])
+@app.route('/login', methods=['POST'])
 def login():
-    form = loginForm(request.form)
-    username = form.username.data
-    password = form.password.data
 
-
+    json = request.get_json()
+    username = json['username']
+    password = json['password']
 
     if username:
         # GET THE USER_ID TO PUT IT INTO THE SESSION
@@ -231,20 +230,12 @@ def login():
         id = cur.fetchall()
         cur.close()
 
-
+        # GET STORED PASSWORD
         cur = mysql.connection.cursor()
-
-
         cur.execute('''SELECT password FROM users WHERE username = %s''', [username])
-
-        #  COMMIT TO DATABASE
         mysql.connection.commit()
-
         hashed_password = cur.fetchall()
-
-        # CLOSE THE CONNECTION
         cur.close()
-
 
         if sha256_crypt.verify(password, hashed_password[0]['password']):
             # SET THE SEESION
