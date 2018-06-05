@@ -14,8 +14,8 @@ import os
 import json
 
 app = Flask(__name__)
-
-
+# SET SECRET KEY
+app.secret_key = os.environ.get('SECRET_KEY')
 app.config['SESSION_TYPE'] = 'filesystem'
 json = FlaskJSON(app)
 Session(app)
@@ -38,32 +38,44 @@ app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 # INITIATES MYSQL
 mysql = MySQL(app)
 
-######## SERVER SIDE VALIDATION FOR FORMS ######
-# class newDeckForm(Form):
-#     author = StringField('Author', [validators.Length(min=1, max=50)])
-#     title  = StringField('Title', [validators.Length(min=4, max=50)])
-#
-# class updateDeckForm(Form):
-#     subject = StringField('Author', [validators.Length(min=1, max=50)])
-#     title  = StringField('Title', [validators.Length(min=4, max=50)])
-#
-# class newCardForm(Form):
-#     front = StringField('Front', [validators.Length(min=1, max=300)])
-#     back  = StringField('Back', [validators.Length(min=4, max=300)])
-#
-# class updateCardForm(Form):
-#     front = StringField('Front', [validators.Length(min=1, max=300)])
-#     back  = StringField('Back', [validators.Length(min=4, max=300)])
-#
-# class newTagForm(Form):
-#     name = StringField('Name', [validators.Length(min=1, max=25)])
-
 ############# ROUTES #############
 
 @app.route('/')
 def index():
     return json_response(doesItWork='yes')
 
+# LOGIN ROUTE
+@app.route('/login', methods=['POST'])
+def login():
+
+    json = request.get_json()
+    username = json['username']
+    password = json['password']
+
+    if username:
+        # GET THE USER_ID TO PUT IT INTO THE SESSION
+        cur = mysql.connection.cursor()
+        cur.execute('''SELECT id FROM users WHERE username = %s''', [username])
+        mysql.connection.commit()
+        id = cur.fetchall()
+        cur.close()
+
+        # GET STORED PASSWORD
+        cur = mysql.connection.cursor()
+        cur.execute('''SELECT password FROM users WHERE username = %s''', [username])
+        mysql.connection.commit()
+        hashed_password = cur.fetchall()
+        cur.close()
+
+        if sha256_crypt.verify(password, hashed_password[0]['password']):
+            # SET THE SEESION
+            session['logged_in'] = True
+            session['username'] = username
+            session['id'] = id[0]['id']
+
+        return json_response(loginStatus='success')
+
+    return json_response(loginStatus='fail')
 
 @app.route('/logout')
 def logout():
@@ -217,39 +229,6 @@ def createNewTag():
 
 
 # ######################## READ ###########################################
-# LOGIN ROUTE
-@app.route('/login', methods=['POST'])
-def login():
-
-    json = request.get_json()
-    username = json['username']
-    password = json['password']
-
-    if username:
-        # GET THE USER_ID TO PUT IT INTO THE SESSION
-        cur = mysql.connection.cursor()
-        cur.execute('''SELECT id FROM users WHERE username = %s''', [username])
-        mysql.connection.commit()
-        id = cur.fetchall()
-        cur.close()
-
-        # GET STORED PASSWORD
-        cur = mysql.connection.cursor()
-        cur.execute('''SELECT password FROM users WHERE username = %s''', [username])
-        mysql.connection.commit()
-        hashed_password = cur.fetchall()
-        cur.close()
-
-        if sha256_crypt.verify(password, hashed_password[0]['password']):
-            # SET THE SEESION
-            session['logged_in'] = True
-            session['username'] = username
-            session['id'] = id[0]['id']
-
-        return json_response(loginStatus='success')
-
-    return json_response(loginStatus='fail')
-
 
 # GET ALL USERS
 @app.route('/getAllUsers')
