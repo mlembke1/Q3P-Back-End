@@ -12,9 +12,10 @@ env_path = Path('.') / '.env'
 load_dotenv(dotenv_path=env_path)
 import os
 import json
+from flask_cors import CORS
 
 app = Flask(__name__)
-
+CORS(app)
 # SET SECRET KEY
 app.secret_key = os.environ.get('SECRET_KEY')
 app.config['SESSION_TYPE'] = 'filesystem'
@@ -40,39 +41,24 @@ app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 mysql = MySQL(app)
 
 ######## SERVER SIDE VALIDATION FOR FORMS ######
-class newDeckForm(Form):
-    author = StringField('Author', [validators.Length(min=1, max=50)])
-    title  = StringField('Title', [validators.Length(min=4, max=50)])
-
-class updateDeckForm(Form):
-    subject = StringField('Author', [validators.Length(min=1, max=50)])
-    title  = StringField('Title', [validators.Length(min=4, max=50)])
-
-class newCardForm(Form):
-    front = StringField('Front', [validators.Length(min=1, max=300)])
-    back  = StringField('Back', [validators.Length(min=4, max=300)])
-
-class updateCardForm(Form):
-    front = StringField('Front', [validators.Length(min=1, max=300)])
-    back  = StringField('Back', [validators.Length(min=4, max=300)])
-
-class newTagForm(Form):
-    name = StringField('Name', [validators.Length(min=1, max=25)])
-
-class signupForm(Form):
-    username = StringField('Username', [validators.Length(min=1, max=50)])
-    email = StringField('Email', [validators.Length(min=1, max=50)])
-    password = PasswordField('Password', [
-        validators.DataRequired(),
-        validators.EqualTo('confirm', message="Passwords do not match"),
-        validators.Length(min=4, max=50)
-    ])
-    confirm = PasswordField('Confirm Password')
-
-
-class loginForm(Form):
-    username = StringField('Username', [validators.Length(min=1, max=50)])
-    password = StringField('Password', [validators.Length(min=4, max=50)])
+# class newDeckForm(Form):
+#     author = StringField('Author', [validators.Length(min=1, max=50)])
+#     title  = StringField('Title', [validators.Length(min=4, max=50)])
+#
+# class updateDeckForm(Form):
+#     subject = StringField('Author', [validators.Length(min=1, max=50)])
+#     title  = StringField('Title', [validators.Length(min=4, max=50)])
+#
+# class newCardForm(Form):
+#     front = StringField('Front', [validators.Length(min=1, max=300)])
+#     back  = StringField('Back', [validators.Length(min=4, max=300)])
+#
+# class updateCardForm(Form):
+#     front = StringField('Front', [validators.Length(min=1, max=300)])
+#     back  = StringField('Back', [validators.Length(min=4, max=300)])
+#
+# class newTagForm(Form):
+#     name = StringField('Name', [validators.Length(min=1, max=25)])
 
 ############# ROUTES #############
 
@@ -86,34 +72,25 @@ def logout():
 @app.route('/signup', methods=['POST'])
 def signup():
     # if not session.username:
-        # form = signupForm(request.form)
-        # if form.validate():
-        # username = form.username.data
-        # email = form.email.data
-        # password = sha256_crypt.hash(form.password.data)
-
-        # GET THE USER_ID TO PUT IT INTO THE SESSION
-        cur = mysql.connection.cursor()
-        cur.execute('''SELECT id FROM users WHERE username = %s''', [username])
-        mysql.connection.commit()
-        id = cur.fetchone()[0]
-        cur.close()
-
         # FROM THE COMMAND LINE USE THIS TO CREATE A USER
         json = request.get_json()
         username = json['username']
         email = json['email']
         password = sha256_crypt.hash(json['password'])
 
+        # INSERT NEW USER INTO USERS TABLE
         cur = mysql.connection.cursor()
-
-
         cur.execute('''INSERT INTO users(username, email, password) VALUES(%s, %s, %s)''', (username, email, password))
-
         #  COMMIT TO DATABASE
         mysql.connection.commit()
-
         # CLOSE THE CONNECTION
+        cur.close()
+
+        # GET THE USER_ID TO PUT IT INTO THE SESSION
+        cur = mysql.connection.cursor()
+        cur.execute('''SELECT id FROM users WHERE username = %s''', [username])
+        mysql.connection.commit()
+        id = cur.fetchone()
         cur.close()
 
         session['logged_in'] = True
@@ -238,7 +215,7 @@ def createNewTag():
 
 # ######################## READ ###########################################
 # LOGIN ROUTE
-@app.route('/login', methods=['POST'])
+@app.route('/signin', methods=['POST'])
 def login():
     form = loginForm(request.form)
     username = form.username.data
