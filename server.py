@@ -62,6 +62,11 @@ mysql = MySQL(app)
 
 ############# ROUTES #############
 
+@app.route('/')
+def index():
+    return json_response(doesItWork='yes')
+
+
 @app.route('/logout')
 def logout():
     session.clear()
