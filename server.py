@@ -12,12 +12,10 @@ env_path = Path('.') / '.env'
 load_dotenv(dotenv_path=env_path)
 import os
 import json
-from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
-# SET SECRET KEY
-app.secret_key = os.environ.get('SECRET_KEY')
+
+
 app.config['SESSION_TYPE'] = 'filesystem'
 json = FlaskJSON(app)
 Session(app)
