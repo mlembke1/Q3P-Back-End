@@ -148,6 +148,24 @@ def createNewDeck():
 
         return json_response(newDeckStatus='success')
 
+
+#  CREATE A NEW DECK
+@app.route('/addDeck', methods=['POST'])
+def addDeck():
+        json = request.get_json()
+        user_id = session['id']
+        deck_id = json['deck_id']
+
+        cur = mysql.connection.cursor()
+        cur.execute('''INSERT INTO users_decks(user_id, deck_id) VALUES(%s, %s)''', (user_id, deck_id))
+        mysql.connection.commit()
+        cur.close()
+
+        return json_response(addDeckStatus='success')
+
+
+
+
 #  CREATE A NEW CARD
 @app.route('/createCard', methods=['POST'])
 def createNewCard():
