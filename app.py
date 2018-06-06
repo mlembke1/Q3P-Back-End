@@ -229,10 +229,8 @@ def getAllDecksForUser():
 
         id = session['id']
         cur = mysql.connection.cursor()
-        cur.execute('''SELECT *
-                       from decks
-                       INNER JOIN users_decks ON users_decks.deck_id
-                       WHERE users_decks.user_id = %s''', [id])
+        cur.execute('''SELECT * FROM users_decks WHERE users_decks.user_id = %s''', [id])
+
         #  COMMIT TO DATABASE
         mysql.connection.commit()
         userDecks = cur.fetchall()
