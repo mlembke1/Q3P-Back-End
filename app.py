@@ -90,8 +90,6 @@ def logout():
 # CREATE A NEW USER
 @app.route('/signup', methods=['POST'])
 def signup():
-    # if not session.username:
-        # FROM THE COMMAND LINE USE THIS TO CREATE A USER
         json = request.get_json()
         username = json['username']
         email = json['email']
@@ -122,21 +120,12 @@ def signup():
 #  CREATE A NEW DECK
 @app.route('/createDeck', methods=['POST'])
 def createNewDeck():
-    # if session.username:
-        form = newDeckForm(request.form)
-        # if request.method == 'POST' and form.validate():
-            # title = form.title.data
-            # subject = form.subject.data
-            # author = session['username']
-            # user_id = session['id']
-
-        # FROM THE COMMAND LINE USE THIS TO CREATE A DECK
         json = request.get_json()
         title = json['title']
         subject = json['subject']
         author = json['author']
         public = json['public']
-        user_id = 1
+        user_id = session['id']
 
         cur = mysql.connection.cursor()
 
@@ -162,14 +151,6 @@ def createNewDeck():
 #  CREATE A NEW CARD
 @app.route('/createCard', methods=['POST'])
 def createNewCard():
-    # if session.username:
-        # form = newCardForm(request.form)
-        # if request.method == 'POST' and form.validate():
-        #     front = form.front.data
-        #     back = form.back.data
-        #     deck_id = form.deck_id.data
-
-            # FROM THE COMMAND LINE USE THIS TO CREATE A CARD
             json = request.get_json()
             front = json['front']
             back = json['back']
@@ -191,14 +172,6 @@ def createNewCard():
 #  CREATE A NEW CARD
 @app.route('/createTag', methods=['POST'])
 def createNewTag():
-    # if session.username:
-        # form = newTagForm(request.form)
-        # if request.method == 'POST' and form.validate():
-        #
-        #     name = form.name.data
-        #     card_id = form.card_id.data
-
-        # FROM THE COMMAND LINE USE THIS TO CREATE A CARD
         json = request.get_json()
         name = json['name']
         card_id = json['card_id']
@@ -252,10 +225,8 @@ def getAllUsers():
 
 # VIEW ALL DECKS
 @app.route('/getAllDecksForUser')
-def readAllDecksForUser():
-    # if session.username:
+def getAllDecksForUser():
         username = session['username']
-        app.logger.info(session)
         cur = mysql.connection.cursor()
 
         cur.execute('''SELECT * FROM decks WHERE username = %s''', [username])
@@ -313,10 +284,6 @@ def deck_by_id(id):
  # UPDATE A JOURNAL ENTRY
 @app.route('/update/<string:id>', methods=['PUT'])
 def update(id):
-    # form = updateDeckForm(request.form)
-    # title = form.title.data
-    # subject = form.subject.data
-
     json = request.get_json()
     title = json['title']
     subject = json['subject']
