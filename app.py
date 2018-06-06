@@ -123,9 +123,11 @@ def createNewDeck():
         json = request.get_json()
         title = json['title']
         subject = json['subject']
+        # author = session['username']
         author = json['author']
         public = json['public']
-        user_id = session['id']
+        # user_id = session['id']
+        user_id = json['user_id']
 
         cur = mysql.connection.cursor()
 
@@ -231,7 +233,7 @@ def getAllDecksForUser():
         cur = mysql.connection.cursor()
         cur.execute('''SELECT *
                        from decks
-                       INNER JOIN users_decks ON user_decks.user_id = %s''', [id])
+                       INNER JOIN users_decks ON users_decks.user_id = %s''', [id])
         #  COMMIT TO DATABASE
         mysql.connection.commit()
         userDecks = cur.fetchall()
