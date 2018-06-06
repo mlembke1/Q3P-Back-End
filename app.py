@@ -153,7 +153,8 @@ def createNewDeck():
 @app.route('/addDeck', methods=['POST'])
 def addDeck():
         json = request.get_json()
-        user_id = session['id']
+        # user_id = session['id']
+        user_id = json['id']
         deck_id = json['deck_id']
 
         cur = mysql.connection.cursor()
