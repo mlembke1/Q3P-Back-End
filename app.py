@@ -44,6 +44,11 @@ mysql = MySQL(app)
 def index():
     return json_response(doesItWork='yes')
 
+@app.route('/getCurrentUser')
+def currentUser():
+    currentUser = session['username']
+    return json_response(currentUser=currentUser)
+
 # LOGIN ROUTE
 @app.route('/login', methods=['POST'])
 def login():
@@ -72,7 +77,6 @@ def login():
             session['logged_in'] = True
             session['username'] = username
             session['id'] = id[0]['id']
-
         return json_response(loginStatus='success')
 
     return json_response(loginStatus='fail')
@@ -133,8 +137,6 @@ def createNewDeck():
         author = json['author']
         public = json['public']
         user_id = 1
-
-        app.logger.info(public)
 
         cur = mysql.connection.cursor()
 
@@ -253,6 +255,7 @@ def getAllUsers():
 def readAllDecksForUser():
     # if session.username:
         username = session['username']
+        app.logger.info(session)
         cur = mysql.connection.cursor()
 
         cur.execute('''SELECT * FROM decks WHERE username = %s''', [username])
