@@ -226,22 +226,18 @@ def getAllUsers():
 # VIEW ALL DECKS
 @app.route('/getAllDecksForUser')
 def getAllDecksForUser():
-        app.logger.info('THIS IS THE SESSION LOG. PAY ATTENTION TO THE SESSION LOG')
-        app.logger.info(session)
-        app.logger.info(session['username'])
 
-        username = session['username']
+        id = session['id']
         cur = mysql.connection.cursor()
-
-        cur.execute('''SELECT * FROM decks WHERE username = %s''', [username])
-
+        cur.execute('''SELECT *
+                       from decks
+                       INNER JOIN users_decks ON user_decks.user_id = %s''', [id])
         #  COMMIT TO DATABASE
         mysql.connection.commit()
-
-        decks = cur.fetchall()
-
+        userDecks = cur.fetchall()
         # CLOSE THE CONNECTION
         cur.close()
+
 
         return json_response(userDecks=userDecks)
 
