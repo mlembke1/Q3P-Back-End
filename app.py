@@ -229,7 +229,10 @@ def getAllDecksForUser():
 
         id = session['id']
         cur = mysql.connection.cursor()
-        cur.execute('''SELECT * FROM users_decks WHERE users_decks.user_id = %s''', [id])
+        cur.execute('''SELECT * FROM decks
+                       LEFT JOIN users_decks
+                       ON decks.id = users_decks.deck_id
+                       WHERE users_decks.user_id = %s''', [id])
 
         #  COMMIT TO DATABASE
         mysql.connection.commit()
