@@ -123,11 +123,9 @@ def createNewDeck():
         json = request.get_json()
         title = json['title']
         subject = json['subject']
-        # author = session['username']
-        author = json['author']
+        author = session['username']
         public = json['public']
-        # user_id = session['id']
-        user_id = json['user_id']
+        user_id = session['id']
 
         cur = mysql.connection.cursor()
 
