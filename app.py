@@ -226,6 +226,10 @@ def getAllUsers():
 # VIEW ALL DECKS
 @app.route('/getAllDecksForUser')
 def getAllDecksForUser():
+        app.logger.info('THIS IS THE SESSION LOG. PAY ATTENTION TO THE SESSION LOG')
+        app.logger.info(session)
+        app.logger.info(session['username'])
+
         username = session['username']
         cur = mysql.connection.cursor()
 
