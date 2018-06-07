@@ -327,7 +327,7 @@ def update():
 # ######################## DELETE ###########################################
 # DELETE A DECK
 @app.route('/deleteDeck', methods=['DELETE'])
-def delete():
+def deleteDeck():
 
         # DELETE FROM DECKS
         json = request.get_json()
@@ -358,7 +358,7 @@ def delete():
 
 # DELETE A DECK
 @app.route('/removeDeckFromUser', methods=['DELETE'])
-def delete():
+def deleteDeckFromUser():
 
         json = request.get_json()
         deck_id = json['deck_id']
@@ -385,7 +385,7 @@ def delete():
 
 # DELETE A CARD
 @app.route('/deleteCard', methods=['DELETE'])
-def delete():
+def deleteCard():
 
         # DELETE FROM CARDS
         json = request.get_json()
@@ -397,7 +397,6 @@ def delete():
         cur.close()
 
         # DELETE FROM CARDS_TAGS
-        json = request.get_json()
         cur = mysql.connection.cursor()
         cur.execute ('''DELETE FROM cards_tags WHERE card_id=%s''', [card_id])
         mysql.connection.commit()
