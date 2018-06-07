@@ -149,7 +149,7 @@ def createNewDeck():
         return json_response(newDeckStatus='success')
 
 
-#  CREATE A NEW DECK
+#  ADD A DECK TO THE USER'S LIST
 @app.route('/addDeck', methods=['POST'])
 def addDeck():
         json = request.get_json()
@@ -162,7 +162,6 @@ def addDeck():
         cur.close()
 
         return json_response(addDeckStatus='success')
-
 
 
 
@@ -187,7 +186,7 @@ def createNewCard():
 
             return json_response(newCardStatus='success')
 
-#  CREATE A NEW CARD
+#  CREATE A NEW TAG
 @app.route('/createTag', methods=['POST'])
 def createNewTag():
         json = request.get_json()
@@ -240,7 +239,7 @@ def getAllUsers():
 
     return json_response(allUsers=allUsers)
 
-# GET ALL USERS
+# GET ALL CARDS
 @app.route('/getAllCards', methods=['POST'])
 def getAllCards():
     json = request.get_json()
@@ -248,7 +247,7 @@ def getAllCards():
 
     cur = mysql.connection.cursor()
 
-    result = cur.execute('''SELECT * FROM cards WHERE deck_id = %s''', [deck_id])
+    cur.execute('''SELECT * FROM cards WHERE deck_id = %s''', [deck_id])
 
     #  COMMIT TO DATABASE
     mysql.connection.commit()
@@ -302,63 +301,116 @@ def readAllPublicDecks():
         return json_response(publicDecks=decks)
 
 
-#  GET SPECIFIC DECK BY ITS ID
-@app.route('/deck/<string:id>')
-def deck_by_id(id):
-    cur = mysql.connection.cursor()
-
-
-    cur.execute('''SELECT * FROM decks WHERE id = %s''', [id])
-
-    #  COMMIT TO DATABASE
-    mysql.connection.commit()
-
-    deck = cur.fetchone()
-
-    # CLOSE THE CONNECTION
-    cur.close()
-    return json_response(deck=deck)
-
-
 # ######################## UPDATE ###########################################
- # UPDATE A JOURNAL ENTRY
-@app.route('/update/<string:id>', methods=['PUT'])
-def update(id):
+ # UPDATE A CARD
+@app.route('/editCard', methods=['PUT'])
+def update():
     json = request.get_json()
     title = json['title']
     subject = json['subject']
+    card_id = json['card_id']
+    deck_id = json['deck_id']
 
-    # CREATE CURSOR
     cur = mysql.connection.cursor()
-
-    # EXECUTE QUERIES
-    cur.execute ('''UPDATE decks SET title = %s, subject = %s WHERE id=%s''', (title, subject, id))
-
-    #  COMMIT TO DATABASE
+    cur.execute ('''UPDATE cards SET title = %s, subject = %s WHERE id=%s''', (title, subject, card_id))
     mysql.connection.commit()
-
-    # CLOSE THE CONNECTION
     cur.close()
 
-    return json_response(updateStatus='success')
+    cur = mysql.connection.cursor()
+    cur.execute('''SELECT * FROM cards WHERE deck_id = %s''', [deck_id])
+    mysql.connection.commit()
+    updatedCards=cur.fetchall()
+    cur.close()
+
+    return json_response(updatedCards=updatedCards)
 
 # ######################## DELETE ###########################################
- # DELETE A JOURNAL ENTRY
-@app.route('/delete/<string:id>', methods=['DELETE'])
-def delete(id):
-        # CREATE CURSOR
+# DELETE A DECK
+@app.route('/deleteDeck', methods=['DELETE'])
+def delete():
+
+        # DELETE FROM DECKS
+        json = request.get_json()
+        deck_id = json['deck_id']
         cur = mysql.connection.cursor()
-
-        # EXECUTE QUERIES
-        cur.execute ('''DELETE FROM decks WHERE id=%s''', [id])
-
-        #  COMMIT TO DATABASE
+        cur.execute ('''DELETE FROM decks WHERE id=%s''', [deck_id])
         mysql.connection.commit()
-
-        # CLOSE THE CONNECTION
         cur.close()
 
-        return json_response(deleteStatus='success')
+        # DELETE FROM USERS_DECKS
+        cur = mysql.connection.cursor()
+        cur.execute ('''DELETE FROM users_decks WHERE deck_id=%s''', [deck_id])
+        mysql.connection.commit()
+        cur.close()
+
+        #  GET UPTATED DECKS
+        id = session['id']
+        cur = mysql.connection.cursor()
+        cur.execute('''SELECT * FROM decks
+                       LEFT JOIN users_decks
+                       ON decks.id = users_decks.deck_id
+                       WHERE users_decks.user_id = %s''', [id])
+        mysql.connection.commit()
+        updatedDecks = cur.fetchall()
+        cur.close()
+
+        return json_response(updatedDecks=updatedDecks)
+
+# DELETE A DECK
+@app.route('/removeDeckFromUser', methods=['DELETE'])
+def delete():
+
+        json = request.get_json()
+        deck_id = json['deck_id']
+
+        # DELETE FROM USERS_DECKS
+        json = request.get_json()
+        cur = mysql.connection.cursor()
+        cur.execute ('''DELETE FROM users_decks WHERE deck_id=%s''', [deck_id])
+        mysql.connection.commit()
+        cur.close()
+
+        #  GET UPDATED DECKS
+        id = session['id']
+        cur = mysql.connection.cursor()
+        cur.execute('''SELECT * FROM decks
+                       LEFT JOIN users_decks
+                       ON decks.id = users_decks.deck_id
+                       WHERE users_decks.user_id = %s''', [id])
+        mysql.connection.commit()
+        updatedDecks = cur.fetchall()
+        cur.close()
+
+        return json_response(updatedDecks=updatedDecks)
+
+# DELETE A CARD
+@app.route('/deleteCard', methods=['DELETE'])
+def delete():
+
+        # DELETE FROM CARDS
+        json = request.get_json()
+        card_id = json['card_id']
+        deck_id = json['deck_id']
+        cur = mysql.connection.cursor()
+        cur.execute ('''DELETE FROM cards WHERE id=%s''', [card_id])
+        mysql.connection.commit()
+        cur.close()
+
+        # DELETE FROM CARDS_TAGS
+        json = request.get_json()
+        cur = mysql.connection.cursor()
+        cur.execute ('''DELETE FROM cards_tags WHERE card_id=%s''', [card_id])
+        mysql.connection.commit()
+        cur.close()
+
+        #  GET UPDATED CARDS
+        cur = mysql.connection.cursor()
+        cur.execute ('''SELECT * FROM cards WHERE deck_id = %s''', [deck_id])
+        mysql.connection.commit()
+        updatedCards = cur.fetchall()
+        cur.close()
+
+        return json_response(updatedCards=updatedCards)
 
 ############## RUN THE APP ###############
 if __name__ == '__main__':
