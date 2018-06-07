@@ -3,7 +3,7 @@ CREATE TABLE decks(
   title VARCHAR(100) NOT NULL,
   subject VARCHAR(100) NOT NULL,
   author VARCHAR(100) NOT NULL,
-  public VARCHAR(1) NOT NULL,
+  public VARCHAR(1) NOT NULL
 );
 
 CREATE TABLE users_decks(

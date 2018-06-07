@@ -240,6 +240,26 @@ def getAllUsers():
 
     return json_response(allUsers=allUsers)
 
+# GET ALL USERS
+@app.route('/getAllCards', methods=['POST'])
+def getAllCards():
+    json = request.get_json()
+    deck_id = json['deck_id']
+
+    cur = mysql.connection.cursor()
+
+    result = cur.execute('''SELECT * FROM cards WHERE deck_id = %s''', [deck_id])
+
+    #  COMMIT TO DATABASE
+    mysql.connection.commit()
+
+    allCards = cur.fetchall()
+
+    # CLOSE THE CONNECTION
+    cur.close()
+
+    return json_response(allCards=allCards)
+
 
 # VIEW ALL DECKS
 @app.route('/getAllDecksForUser')
