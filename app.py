@@ -358,7 +358,7 @@ def deleteCard():
         json = request.get_json()
 
         app.logger.info(json)
-        
+
         id = json['card_id']
         deck_id = json['deck_id']
         cur = mysql.connection.cursor()
