@@ -186,40 +186,6 @@ def createNewCard():
 
             return json_response(newCardStatus='success')
 
-#  CREATE A NEW TAG
-@app.route('/createTag', methods=['POST'])
-def createNewTag():
-        json = request.get_json()
-        name = json['name']
-        card_id = json['card_id']
-
-
-        cur = mysql.connection.cursor()
-        # FOR THE NEW TAG
-        cur.execute('''INSERT INTO tags(name) VALUES(%s)''', [name])
-        #  COMMIT TO DATABASE
-        mysql.connection.commit()
-        # CLOSE THE CONNECTION
-        cur.close()
-
-        #  GET TAG_ID
-        cur = mysql.connection.cursor()
-        cur.execute('''SELECT LAST_INSERT_ID()''')
-        mysql.connection.commit()
-        tag_id = cur.fetchone()['LAST_INSERT_ID()']
-        cur.close()
-
-
-        # FOR THE NEW CARDS_TAGS ENTRY
-        cur = mysql.connection.cursor()
-        cur.execute('''INSERT INTO cards_tags(card_id, tag_id) VALUES(%s, %s)''', (card_id, tag_id))
-        mysql.connection.commit()
-        cur.close()
-
-        return json_response(newTagStatus='success')
-
-
-
 # ######################## READ ###########################################
 
 # GET ALL USERS
@@ -389,16 +355,10 @@ def deleteCard():
 
         # DELETE FROM CARDS
         json = request.get_json()
-        card_id = json['card_id']
+        id = json['card_id']
         deck_id = json['deck_id']
         cur = mysql.connection.cursor()
-        cur.execute ('''DELETE FROM cards WHERE id=%s''', [card_id])
-        mysql.connection.commit()
-        cur.close()
-
-        # DELETE FROM CARDS_TAGS
-        cur = mysql.connection.cursor()
-        cur.execute ('''DELETE FROM cards_tags WHERE card_id=%s''', [card_id])
+        cur.execute ('''DELETE FROM cards WHERE id=%s''', [id])
         mysql.connection.commit()
         cur.close()
 

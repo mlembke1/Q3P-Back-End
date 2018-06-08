@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "react-native-swipeout": "^2.3.3"
+  }
+}
